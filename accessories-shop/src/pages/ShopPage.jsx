@@ -1,10 +1,39 @@
-import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+
+// Category color palette for gradient placeholders
+const CAT_COLORS = {
+    'Screen Protection': ['#667eea', '#764ba2'],
+    'Cables & Chargers': ['#f093fb', '#f5576c'],
+    'Audio': ['#4facfe', '#00f2fe'],
+    'Phone Cases': ['#43e97b', '#38f9d7'],
+    'Car Accessories': ['#fa709a', '#fee140'],
+    'Powerbanks': ['#a18cd1', '#fbc2eb'],
+    'default': ['#FF6B00', '#FF8C33'],
+};
+const CAT_ICONS = {
+    'Screen Protection': '🛡️', 'Cables & Chargers': '⚡',
+    'Audio': '🎧', 'Phone Cases': '📱', 'Car Accessories': '🚗', 'Powerbanks': '🔋',
+};
+
+function imgFallback(e, category) {
+    const [c1, c2] = CAT_COLORS[category] || CAT_COLORS.default;
+    const icon = CAT_ICONS[category] || '📦';
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='225'>
+    <defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'>
+      <stop offset='0%' stop-color='${c1}'/><stop offset='100%' stop-color='${c2}'/>
+    </linearGradient></defs>
+    <rect width='300' height='225' fill='url(#g)'/>
+    <text x='150' y='110' text-anchor='middle' font-size='56' font-family='serif'>${icon}</text>
+  </svg>`;
+    e.target.src = 'data:image/svg+xml;base64,' + btoa(svg);
+    e.target.onerror = null;
+}
 
 const SORT_OPTIONS = [
     { value: 'newest', label: '🆕 Newest' },
@@ -53,15 +82,24 @@ export default function ShopPage() {
     const { toggleWishlist, isInWishlist } = useWishlist();
     const { addToCart } = useCart();
     const { addToast } = useToast();
+    const [searchParams] = useSearchParams();
 
-    const [search, setSearch] = useState('');
-    const [activeCategory, setCat] = useState('All');
+    const [search, setSearch] = useState(searchParams.get('q') || '');
+    const [activeCategory, setCat] = useState(searchParams.get('category') || 'All');
     const [sortBy, setSortBy] = useState('newest');
     const [minRating, setMinRating] = useState(0);
     const [priceRange, setPriceRange] = useState([0, 10000]);
-    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+    const [viewMode, setViewMode] = useState('grid');
     const [page, setPage] = useState(1);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Sync URL params on mount
+    useEffect(() => {
+        const cat = searchParams.get('category');
+        const q = searchParams.get('q');
+        if (cat) setCat(cat);
+        if (q) setSearch(q);
+    }, []);
 
     const filtered = useMemo(() => {
         let list = products.filter((p) => {
@@ -99,8 +137,30 @@ export default function ShopPage() {
         addToast(`"${product.name}" added to cart 🛒`, 'success');
     };
 
+    const [c1, c2] = CAT_COLORS[activeCategory] || CAT_COLORS.default;
+
     return (
         <main className="shop-page">
+            {/* ── Shop Hero Banner ─────────────────── */}
+            <div className="shop-hero" style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
+                <div className="shop-hero-inner">
+                    <div>
+                        <h1 className="shop-hero-title">
+                            {activeCategory === 'All' ? '🛍️ All Products' : `${CAT_ICONS[activeCategory] || '📦'} ${activeCategory}`}
+                        </h1>
+                        <p className="shop-hero-sub">
+                            {filtered.length} product{filtered.length !== 1 ? 's' : ''} available
+                        </p>
+                    </div>
+                    <div className="shop-hero-links">
+                        <Link to="/" className="shop-hero-link">Home</Link>
+                        <span style={{ color: 'rgba(255,255,255,.5)' }}>›</span>
+                        <span style={{ color: '#fff', fontWeight: 700 }}>
+                            {activeCategory === 'All' ? 'Shop' : activeCategory}
+                        </span>
+                    </div>
+                </div>
+            </div>
             {/* ── Top bar ───────────────────────────── */}
             <div className="shop-topbar">
                 <div className="shop-search-box">
@@ -222,11 +282,11 @@ export default function ShopPage() {
                                         <div className="product-image-wrapper">
                                             <Link to={`/product/${product._id}`}>
                                                 <img
-                                                    src={product.image || 'https://via.placeholder.com/300x200?text=No+Image'}
+                                                    src={product.image || ''}
                                                     alt={product.name}
                                                     className="product-image"
                                                     loading="lazy"
-                                                    onError={(e) => { e.target.src = 'https://via.placeholder.com/300x200?text=No+Image'; }}
+                                                    onError={(e) => imgFallback(e, product.category)}
                                                 />
                                             </Link>
                                             <ProductBadges product={product} />

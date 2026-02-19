@@ -3,6 +3,27 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { useWishlist } from '../context/WishlistContext';
 
+const CAT_COLORS = {
+    'Screen Protection': ['#667eea', '#764ba2'],
+    'Cables & Chargers': ['#f093fb', '#f5576c'],
+    'Audio': ['#4facfe', '#00f2fe'],
+    'Phone Cases': ['#43e97b', '#38f9d7'],
+    'Car Accessories': ['#fa709a', '#fee140'],
+    'Powerbanks': ['#a18cd1', '#fbc2eb'],
+    default: ['#FF6B00', '#FF8C33'],
+};
+const CAT_ICONS = {
+    'Screen Protection': '🛡️', 'Cables & Chargers': '⚡',
+    'Audio': '🎧', 'Phone Cases': '📱', 'Car Accessories': '🚗', 'Powerbanks': '🔋',
+};
+function imgFallback(e, category) {
+    const [c1, c2] = CAT_COLORS[category] || CAT_COLORS.default;
+    const icon = CAT_ICONS[category] || '📦';
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='225'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='${c1}'/><stop offset='100%' stop-color='${c2}'/></linearGradient></defs><rect width='300' height='225' fill='url(#g)'/><text x='150' y='125' text-anchor='middle' font-size='64' font-family='serif'>${icon}</text></svg>`;
+    e.target.src = 'data:image/svg+xml;base64,' + btoa(svg);
+    e.target.onerror = null;
+}
+
 function Stars({ rating }) {
     return (
         <span style={{ fontSize: 13, letterSpacing: 1 }}>
@@ -41,11 +62,11 @@ export default function ProductCard({ product, showAdminActions, onEdit, onDelet
         <article className="product-card">
             <Link to={`/product/${product._id}`} className="product-image-wrapper" style={{ display: 'block' }}>
                 <img
-                    src={product.image || 'https://placehold.co/300x225?text=No+Image'}
+                    src={product.image || ''}
                     alt={product.name}
                     className="product-image"
                     loading="lazy"
-                    onError={(e) => { e.target.src = 'https://placehold.co/300x225?text=No+Image'; }}
+                    onError={(e) => imgFallback(e, product.category)}
                 />
                 {/* Badges */}
                 <div className="product-badges">
