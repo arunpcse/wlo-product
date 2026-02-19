@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -15,17 +16,34 @@ export function AuthProvider({ children }) {
         if (session === 'true') setIsAdmin(true);
     }, []);
 
-    const login = (password) => {
-        if (password === ADMIN_PASSWORD) {
-            localStorage.setItem('wlo_admin_session', 'true');
-            setIsAdmin(true);
-        } else {
+    const login = async (password) => {
+        // 1. Local password check (instant feedback)
+        if (password !== ADMIN_PASSWORD) {
             throw new Error('Invalid password');
         }
+
+        setAuthLoading(true);
+        try {
+            // 2. Get JWT token from backend so product CRUD API calls are authenticated
+            const res = await authAPI.login(password);
+            const { token } = res.data;
+            if (token) {
+                localStorage.setItem('adminToken', token);
+            }
+        } catch (err) {
+            // Backend unreachable — continue with local-only session
+            console.warn('⚠️  Could not get JWT from backend, running in local mode:', err.message);
+        } finally {
+            setAuthLoading(false);
+        }
+
+        localStorage.setItem('wlo_admin_session', 'true');
+        setIsAdmin(true);
     };
 
     const logout = () => {
         localStorage.removeItem('wlo_admin_session');
+        localStorage.removeItem('adminToken');
         setIsAdmin(false);
     };
 
