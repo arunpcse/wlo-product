@@ -57,7 +57,7 @@ export default function ProductCard({ product, showAdminActions, onEdit, onDelet
         <article className="product-card">
             <Link to={`/product/${product._id}`} className="product-image-wrapper" style={{ display: 'block' }}>
                 <img
-                    src={product.image || ''}
+                    src={product.image && product.image.trim() ? product.image : (CAT_IMAGES[product.category] || CAT_IMAGES.default)}
                     alt={product.name}
                     className="product-image"
                     loading="lazy"

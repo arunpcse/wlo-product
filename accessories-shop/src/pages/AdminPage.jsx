@@ -248,7 +248,7 @@ export default function AdminPage() {
                                                 <td>
                                                     <div className="admin-product-cell">
                                                         <img
-                                                            src={p.image || ''}
+                                                            src={p.image && p.image.trim() ? p.image : (CAT_IMAGES[p.category] || CAT_IMAGES.default)}
                                                             alt={p.name}
                                                             className="admin-product-thumb"
                                                             onError={(e) => imgFallback(e, p.category)}
