@@ -5,23 +5,19 @@ import { useToast } from '../context/ToastContext';
 
 export default function AdminLoginPage() {
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
     const { login } = useAuth();
     const { addToast } = useToast();
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         if (!password.trim()) { addToast('Please enter password', 'error'); return; }
-        setLoading(true);
         try {
-            await login(password);
+            login(password);
             addToast('Welcome back, Admin! 👋', 'success');
             navigate('/admin');
-        } catch (err) {
-            addToast(err.response?.data?.message || 'Invalid password', 'error');
-        } finally {
-            setLoading(false);
+        } catch {
+            addToast('❌ Wrong password. Try again.', 'error');
         }
     };
 
@@ -45,8 +41,8 @@ export default function AdminLoginPage() {
                             autoComplete="current-password"
                         />
                     </div>
-                    <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-                        {loading ? '⏳ Logging in...' : '🔓 Login'}
+                    <button type="submit" className="btn btn-primary btn-full">
+                        🔓 Login
                     </button>
                 </form>
             </div>
