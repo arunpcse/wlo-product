@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// PRODUCTION: always use Render backend
+// VITE_API_URL env var overrides this in local dev
+const API_URL = import.meta.env.VITE_API_URL || 'https://wlo-product.onrender.com';
+
 
 const api = axios.create({
     baseURL: API_URL,
