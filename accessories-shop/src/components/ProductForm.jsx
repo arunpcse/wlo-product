@@ -4,7 +4,9 @@ const CATEGORIES = ['Screen Protection', 'Cables & Chargers', 'Audio', 'Phone Ca
 
 export default function ProductForm({ product, onSave, onClose }) {
     const [form, setForm] = useState({
-        name: '', price: '', category: CATEGORIES[0], description: '', stock: '', image: '', rating: '4.0',
+        name: '', price: '', originalPrice: '', category: CATEGORIES[0],
+        description: '', stock: '', image: '', rating: '4.0',
+        isFeatured: false, isNewArrival: false, isBestSeller: false,
     });
     const [errors, setErrors] = useState({});
     const [saving, setSaving] = useState(false);
@@ -14,11 +16,15 @@ export default function ProductForm({ product, onSave, onClose }) {
             setForm({
                 name: product.name || '',
                 price: String(product.price || ''),
+                originalPrice: product.originalPrice ? String(product.originalPrice) : '',
                 category: product.category || CATEGORIES[0],
                 description: product.description || '',
                 stock: String(product.stock || ''),
                 image: product.image || '',
                 rating: String(product.rating || '4.0'),
+                isFeatured: product.isFeatured || false,
+                isNewArrival: product.isNewArrival || false,
+                isBestSeller: product.isBestSeller || false,
             });
         }
     }, [product]);
@@ -29,12 +35,13 @@ export default function ProductForm({ product, onSave, onClose }) {
         if (!form.price || isNaN(Number(form.price)) || Number(form.price) <= 0) e.price = 'Enter a valid price';
         if (!form.description.trim()) e.description = 'Description is required';
         if (form.stock !== '' && (isNaN(Number(form.stock)) || Number(form.stock) < 0)) e.stock = 'Enter valid stock quantity';
+        if (form.originalPrice && (isNaN(Number(form.originalPrice)) || Number(form.originalPrice) <= 0)) e.originalPrice = 'Enter valid original price';
         return e;
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setForm((p) => ({ ...p, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        setForm((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
         if (errors[name]) setErrors((p) => ({ ...p, [name]: '' }));
     };
 
@@ -47,21 +54,29 @@ export default function ProductForm({ product, onSave, onClose }) {
             await onSave({
                 name: form.name.trim(),
                 price: Number(form.price),
+                originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
                 category: form.category,
                 description: form.description.trim(),
                 stock: form.stock !== '' ? Number(form.stock) : 0,
                 image: form.image.trim(),
                 rating: Number(form.rating) || 4.0,
                 isActive: true,
+                isFeatured: form.isFeatured,
+                isNewArrival: form.isNewArrival,
+                isBestSeller: form.isBestSeller,
             });
         } finally {
             setSaving(false);
         }
     };
 
+    const discount = form.originalPrice && form.price
+        ? Math.round(((Number(form.originalPrice) - Number(form.price)) / Number(form.originalPrice)) * 100)
+        : 0;
+
     return (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="modal">
+            <div className="modal" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
                 <div className="modal-header">
                     <h2>{product ? '✏️ Edit Product' : '➕ Add New Product'}</h2>
                     <button className="modal-close" onClick={onClose} aria-label="Close">✕</button>
@@ -75,23 +90,38 @@ export default function ProductForm({ product, onSave, onClose }) {
                             {errors.name && <span className="error-msg">{errors.name}</span>}
                         </div>
                         <div className="form-group">
-                            <label htmlFor="pf-price">Price (₹) *</label>
-                            <input id="pf-price" name="price" type="number" min="0" value={form.price} onChange={handleChange} placeholder="e.g. 299" className={errors.price ? 'input-error' : ''} />
-                            {errors.price && <span className="error-msg">{errors.price}</span>}
-                        </div>
-                    </div>
-
-                    <div className="form-row">
-                        <div className="form-group">
                             <label htmlFor="pf-category">Category *</label>
                             <select id="pf-category" name="category" value={form.category} onChange={handleChange}>
                                 {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
+                    </div>
+
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label htmlFor="pf-price">Sale Price (₹) *</label>
+                            <input id="pf-price" name="price" type="number" min="0" value={form.price} onChange={handleChange} placeholder="e.g. 299" className={errors.price ? 'input-error' : ''} />
+                            {errors.price && <span className="error-msg">{errors.price}</span>}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="pf-original-price">
+                                Original Price (₹) <span style={{ color: '#888', fontSize: '0.8rem' }}>for discount badge</span>
+                            </label>
+                            <input id="pf-original-price" name="originalPrice" type="number" min="0" value={form.originalPrice} onChange={handleChange} placeholder="e.g. 499 (leave blank = no discount)" className={errors.originalPrice ? 'input-error' : ''} />
+                            {errors.originalPrice && <span className="error-msg">{errors.originalPrice}</span>}
+                            {discount > 0 && <span style={{ color: 'green', fontSize: '0.85rem' }}>✅ {discount}% discount will show</span>}
+                        </div>
+                    </div>
+
+                    <div className="form-row">
                         <div className="form-group">
                             <label htmlFor="pf-stock">Stock Quantity</label>
                             <input id="pf-stock" name="stock" type="number" min="0" value={form.stock} onChange={handleChange} placeholder="e.g. 50" className={errors.stock ? 'input-error' : ''} />
                             {errors.stock && <span className="error-msg">{errors.stock}</span>}
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="pf-rating">Initial Rating</label>
+                            <input id="pf-rating" name="rating" type="number" min="1" max="5" step="0.1" value={form.rating} onChange={handleChange} placeholder="4.0" />
                         </div>
                     </div>
 
@@ -102,13 +132,30 @@ export default function ProductForm({ product, onSave, onClose }) {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="pf-image">Image URL <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+                        <label htmlFor="pf-image">Image URL <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
                         <input id="pf-image" name="image" type="url" value={form.image} onChange={handleChange} placeholder="https://example.com/image.jpg" />
                         {form.image && (
                             <div className="image-preview">
                                 <img src={form.image} alt="Preview" onError={(e) => (e.target.style.display = 'none')} />
                             </div>
                         )}
+                    </div>
+
+                    {/* Product flags */}
+                    <div className="form-group">
+                        <label>Product Badges</label>
+                        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                            {[
+                                { name: 'isFeatured', label: '⭐ Featured' },
+                                { name: 'isNewArrival', label: '🆕 New Arrival' },
+                                { name: 'isBestSeller', label: '🔥 Best Seller' },
+                            ].map(({ name, label }) => (
+                                <label key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                    <input type="checkbox" name={name} checked={form[name]} onChange={handleChange} />
+                                    {label}
+                                </label>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="form-actions">

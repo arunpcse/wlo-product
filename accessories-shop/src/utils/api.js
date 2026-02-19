@@ -1,9 +1,7 @@
 import axios from 'axios';
 
 // PRODUCTION: always use Render backend
-// VITE_API_URL env var overrides this in local dev
 const API_URL = import.meta.env.VITE_API_URL || 'https://wlo-product.onrender.com';
-
 
 const api = axios.create({
     baseURL: API_URL,
@@ -26,6 +24,7 @@ export const productAPI = {
     create: (data) => api.post('/api/products', data),
     update: (id, data) => api.put(`/api/products/${id}`, data),
     delete: (id) => api.delete(`/api/products/${id}`),
+    addReview: (id, data) => api.post(`/api/products/${id}/reviews`, data),
 };
 
 // Orders

@@ -64,7 +64,7 @@ const deleteProduct = async (req, res) => {
     }
 };
 
-// GET /api/products/categories (all unique categories)
+// GET /api/products/categories
 const getCategories = async (req, res) => {
     try {
         const categories = await Product.distinct('category', { isActive: true });
@@ -74,4 +74,22 @@ const getCategories = async (req, res) => {
     }
 };
 
-module.exports = { getProducts, getProduct, createProduct, updateProduct, deleteProduct, getCategories };
+// POST /api/products/:id/reviews (public — any customer can review)
+const addReview = async (req, res) => {
+    try {
+        const { name, rating, comment } = req.body;
+        if (!name || !rating || !comment) {
+            return res.status(400).json({ success: false, message: 'Name, rating and comment are required' });
+        }
+        const product = await Product.findById(req.params.id);
+        if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+        product.reviews.push({ name, rating: Number(rating), comment });
+        product.updateRating();
+        await product.save();
+        res.status(201).json({ success: true, data: product, message: 'Review added!' });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+module.exports = { getProducts, getProduct, createProduct, updateProduct, deleteProduct, getCategories, addReview };

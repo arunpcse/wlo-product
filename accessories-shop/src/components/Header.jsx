@@ -1,10 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 
 export default function Header() {
     const { cartCount, openCart } = useCart();
     const { isAdmin, logout } = useAuth();
+    const { wishlistCount } = useWishlist();
     const location = useLocation();
 
     const isActive = (path) => location.pathname === path;
@@ -21,7 +23,7 @@ export default function Header() {
                 </Link>
 
                 <nav className="nav">
-                    <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>🏪 Shop</Link>
+                    <Link to="/shop" className={`nav-link ${isActive('/shop') ? 'active' : ''}`}>🏪 Shop</Link>
 
                     {isAdmin ? (
                         <>
@@ -33,6 +35,13 @@ export default function Header() {
                         <Link to="/admin/login" className={`nav-link ${isActive('/admin/login') ? 'active' : ''}`}>🔐 Admin</Link>
                     )}
 
+                    {/* Wishlist icon */}
+                    <Link to="/wishlist" className="icon-btn" aria-label="Wishlist">
+                        ❤️
+                        {wishlistCount > 0 && <span className="icon-badge">{wishlistCount}</span>}
+                    </Link>
+
+                    {/* Cart icon */}
                     <button className="cart-btn" onClick={openCart} aria-label="Open Cart">
                         🛒
                         {cartCount > 0 && <span className="cart-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
