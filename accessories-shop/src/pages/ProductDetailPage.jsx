@@ -77,7 +77,7 @@ export default function ProductDetailPage() {
 
     const handleShare = () => {
         navigator.clipboard?.writeText(window.location.href);
-        const text = `Check out ${product.name} on World Line Out!\n${window.location.href}`;
+        const text = `Check out ${product.name} on World Line On!\n${window.location.href}`;
         if (navigator.share) navigator.share({ title: product.name, url: window.location.href });
         else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         addToast('Link copied! 🔗', 'success');

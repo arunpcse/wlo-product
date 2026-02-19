@@ -42,7 +42,7 @@ export default function App() {
                     <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
                   </Routes>
                   <footer className="footer">
-                    <p>© 2025 <strong>World Line Out</strong> — Premium Mobile Accessories</p>
+                    <p>© 2025 <strong>World Line On</strong> — Premium Mobile Accessories</p>
                     <p className="footer-sub">📱 Quality You Can Trust | WhatsApp: +91 93610 46703</p>
                   </footer>
                 </div>

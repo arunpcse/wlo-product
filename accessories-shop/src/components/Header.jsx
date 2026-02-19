@@ -37,7 +37,7 @@ export default function Header() {
                     <Link to="/" className="hdr-logo">
                         <div className="hdr-logo-icon">📱</div>
                         <div className="hdr-logo-text">
-                            <span className="hdr-logo-brand">World Line Out</span>
+                            <span className="hdr-logo-brand">World Line On</span>
                             <span className="hdr-logo-sub">Mobile Accessories</span>
                         </div>
                     </Link>

@@ -114,7 +114,7 @@ export default function AdminPage() {
                     <div className="admin-sidebar-icon">⚙️</div>
                     <div>
                         <div className="admin-sidebar-brand">Admin Panel</div>
-                        <div className="admin-sidebar-sub">World Line Out</div>
+                        <div className="admin-sidebar-sub">World Line On</div>
                     </div>
                 </div>
                 <nav className="admin-nav">
