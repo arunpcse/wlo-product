@@ -12,6 +12,7 @@ import AdminPage from './pages/AdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmPage from './pages/OrderConfirmPage';
+import AdminOrdersPage from './pages/AdminOrdersPage';
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
                   <Route path="/order-confirm" element={<OrderConfirmPage />} />
                   <Route path="/admin/login" element={<AdminLoginPage />} />
                   <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                  <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
                 </Routes>
                 <footer className="footer">
                   <p>© 2025 <strong>World Line Out</strong> — Premium Mobile Accessories</p>
