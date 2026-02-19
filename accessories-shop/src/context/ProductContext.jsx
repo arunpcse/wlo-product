@@ -1,9 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { productAPI } from '../utils/api';
 
 const ProductContext = createContext();
 
-const SAMPLE_PRODUCTS = [
+// ------------------------------------------------------------------
+// Fallback shown ONLY when the API is completely unreachable
+// ------------------------------------------------------------------
+const FALLBACK_PRODUCTS = [
   { _id: 'sample1', name: 'Premium Tempered Glass', price: 299, category: 'Screen Protection', description: '9H hardness anti-scratch screen protector.', stock: 50, image: 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&q=80', rating: 4.5 },
   { _id: 'sample2', name: 'Fast Charging Cable (Type-C)', price: 199, category: 'Cables & Chargers', description: 'Braided nylon 3A fast charging cable, 2m.', stock: 100, image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=400&q=80', rating: 4.8 },
   { _id: 'sample3', name: 'Wireless Bluetooth Earbuds', price: 1499, category: 'Audio', description: 'True wireless ANC earbuds, 24hr battery, IPX5.', stock: 25, image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&q=80', rating: 4.7 },
@@ -12,61 +15,80 @@ const SAMPLE_PRODUCTS = [
   { _id: 'sample6', name: 'Magnetic Car Mount', price: 449, category: 'Car Accessories', description: 'Strong magnetic vent mount, 360° rotation.', stock: 40, image: 'https://images.unsplash.com/photo-1617870952348-7524edfb61d7?w=400&q=80', rating: 4.3 },
 ];
 
+// How often (ms) we re-fetch from the server to sync across devices
+const SYNC_INTERVAL_MS = 30_000; // 30 seconds
+
+// Purge ALL old localStorage keys from previous versions of the app
+// so old devices don't show stale data
+const purgeOldCache = () => {
+  ['wlo_products', 'wlo_cache_products', 'wlo_cache_categories'].forEach((key) => {
+    localStorage.removeItem(key);
+  });
+};
+
 export function ProductProvider({ children }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [useLocalFallback, setUseLocalFallback] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const intervalRef = useRef(null);
 
+  // ── Fetch from API — ALWAYS the primary source ─────────────────────
   const fetchProducts = useCallback(async () => {
-    // Always load from localStorage first (instant, works offline)
-    const local = localStorage.getItem('wlo_products');
-    const localProducts = local ? JSON.parse(local) : SAMPLE_PRODUCTS;
-    setProducts(localProducts);
-    setCategories([...new Set(localProducts.map((p) => p.category))]);
-    setUseLocalFallback(true);
-    setLoading(false);
-
-    // Silently try to sync from backend if available
     try {
-      const res = await productAPI.getAll();
-      const apiProducts = res.data.data;
-      if (apiProducts.length > 0) {
-        setProducts(apiProducts);
-        const catRes = await productAPI.getCategories();
-        setCategories(catRes.data.data);
-        setUseLocalFallback(false);
-      }
-    } catch {
-      // Backend offline — localStorage already loaded above, no action needed
+      const [prodRes, catRes] = await Promise.all([
+        productAPI.getAll(),
+        productAPI.getCategories(),
+      ]);
+
+      const apiProducts = prodRes.data.data ?? [];
+      const apiCategories = catRes.data.data ?? [];
+
+      setProducts(apiProducts);
+      setCategories(apiCategories);
+      setIsOffline(false);
+      setError(null);
+    } catch (err) {
+      console.warn('⚠️  API unreachable — using fallback.', err.message);
+      setIsOffline(true);
+      // Only show fallback samples if we have truly nothing
+      setProducts((prev) => prev.length > 0 ? prev : FALLBACK_PRODUCTS);
+      setCategories((prev) => prev.length > 0 ? prev : [...new Set(FALLBACK_PRODUCTS.map((p) => p.category))]);
+      setError('Could not reach server. Showing sample data.');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
+  // ── Initial load + polling ──────────────────────────────────────────
   useEffect(() => {
+    // Wipe all old localStorage caches from previous app versions
+    // This ensures every device always reads fresh data from MongoDB
+    purgeOldCache();
+
     fetchProducts();
+
+    // Poll every 30s — changes on another device appear automatically
+    intervalRef.current = setInterval(fetchProducts, SYNC_INTERVAL_MS);
+    return () => clearInterval(intervalRef.current);
   }, [fetchProducts]);
 
-  // Save to localStorage whenever products change (fallback mode)
-  useEffect(() => {
-    if (useLocalFallback) {
-      localStorage.setItem('wlo_products', JSON.stringify(products));
-    }
-  }, [products, useLocalFallback]);
-
+  // ── CRUD — always hits the API; offline falls back to local state ───
   const addProduct = async (data) => {
-    if (useLocalFallback) {
+    if (isOffline) {
       const newProduct = { ...data, _id: `local_${Date.now()}`, rating: 4.0, isActive: true, createdAt: new Date().toISOString() };
       setProducts((prev) => [newProduct, ...prev]);
       return newProduct;
     }
     const res = await productAPI.create(data);
-    setProducts((prev) => [res.data.data, ...prev]);
-    return res.data.data;
+    const created = res.data.data;
+    setProducts((prev) => [created, ...prev]);
+    return created;
   };
 
   const updateProduct = async (id, data) => {
-    if (useLocalFallback) {
+    if (isOffline) {
       setProducts((prev) => prev.map((p) => (p._id === id ? { ...p, ...data } : p)));
       return;
     }
@@ -75,7 +97,7 @@ export function ProductProvider({ children }) {
   };
 
   const deleteProduct = async (id) => {
-    if (useLocalFallback) {
+    if (isOffline) {
       setProducts((prev) => prev.filter((p) => p._id !== id));
       return;
     }
@@ -84,7 +106,17 @@ export function ProductProvider({ children }) {
   };
 
   return (
-    <ProductContext.Provider value={{ products, categories, loading, error, useLocalFallback, fetchProducts, addProduct, updateProduct, deleteProduct }}>
+    <ProductContext.Provider value={{
+      products,
+      categories,
+      loading,
+      error,
+      isOffline,
+      fetchProducts,
+      addProduct,
+      updateProduct,
+      deleteProduct,
+    }}>
       {children}
     </ProductContext.Provider>
   );
