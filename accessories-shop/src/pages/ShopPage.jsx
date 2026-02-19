@@ -6,32 +6,23 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-// Category color palette for gradient placeholders
-const CAT_COLORS = {
-    'Screen Protection': ['#667eea', '#764ba2'],
-    'Cables & Chargers': ['#f093fb', '#f5576c'],
-    'Audio': ['#4facfe', '#00f2fe'],
-    'Phone Cases': ['#43e97b', '#38f9d7'],
-    'Car Accessories': ['#fa709a', '#fee140'],
-    'Powerbanks': ['#a18cd1', '#fbc2eb'],
-    'default': ['#FF6B00', '#FF8C33'],
+// Real product photos from Unsplash per category
+const CAT_IMAGES = {
+    'Screen Protection': 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&w=420&q=80',
+    'Cables & Chargers': 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&w=420&q=80',
+    'Audio': 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&w=420&q=80',
+    'Phone Cases': 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?auto=format&w=420&q=80',
+    'Car Accessories': 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&w=420&q=80',
+    'Powerbanks': 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&w=420&q=80',
+    'Power Banks': 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?auto=format&w=420&q=80',
+    'default': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&w=420&q=80',
 };
 const CAT_ICONS = {
     'Screen Protection': '🛡️', 'Cables & Chargers': '⚡',
-    'Audio': '🎧', 'Phone Cases': '📱', 'Car Accessories': '🚗', 'Powerbanks': '🔋',
+    'Audio': '🎧', 'Phone Cases': '📱', 'Car Accessories': '🚗', 'Powerbanks': '🔋', 'Power Banks': '🔋',
 };
-
 function imgFallback(e, category) {
-    const [c1, c2] = CAT_COLORS[category] || CAT_COLORS.default;
-    const icon = CAT_ICONS[category] || '📦';
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='225'>
-    <defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'>
-      <stop offset='0%' stop-color='${c1}'/><stop offset='100%' stop-color='${c2}'/>
-    </linearGradient></defs>
-    <rect width='300' height='225' fill='url(#g)'/>
-    <text x='150' y='110' text-anchor='middle' font-size='56' font-family='serif'>${icon}</text>
-  </svg>`;
-    e.target.src = 'data:image/svg+xml;base64,' + btoa(svg);
+    e.target.src = CAT_IMAGES[category] || CAT_IMAGES.default;
     e.target.onerror = null;
 }
 
