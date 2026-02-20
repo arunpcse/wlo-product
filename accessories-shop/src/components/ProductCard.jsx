@@ -23,7 +23,7 @@ function Stars({ rating }) {
     return (
         <span style={{ fontSize: 13, letterSpacing: 1 }}>
             {Array.from({ length: 5 }, (_, i) => (
-                <span key={i} style={{ color: i < Math.round(rating) ? '#1c2628' : '#D1D5DB' }}>★</span>
+                <span key={i} style={{ color: i < Math.round(rating) ? '#FF6B00' : '#D1D5DB' }}>★</span>
             ))}
         </span>
     );

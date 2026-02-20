@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useProducts } from '../context/ProductContext';
 import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
-import { orderAPI } from '../utils/api';
+import { orderAPI, paymentAPI } from '../utils/api';
 import ProductForm from '../components/ProductForm';
 import DeleteConfirm from '../components/DeleteConfirm';
 import ImageUploader from '../components/ImageUploader';
@@ -28,6 +28,13 @@ const STATUS_COLORS = {
     shipped: { bg: '#eff6ff', color: '#2563eb', dot: '#3b82f6' },
     delivered: { bg: '#f5f3ff', color: '#7c3aed', dot: '#8b5cf6' },
     cancelled: { bg: '#fff1f2', color: '#dc2626', dot: '#ef4444' },
+};
+
+const PAYMENT_STATUS_COLORS = {
+    'pending': { bg: '#FEF3C7', color: '#D97706', dot: '#F59E0B' },
+    'paid': { bg: '#DCFCE7', color: '#16A34A', dot: '#10B981' },
+    'failed': { bg: '#FEE2E2', color: '#DC2626', dot: '#EF4444' },
+    'refunded': { bg: '#F3F4F6', color: '#6B7280', dot: '#9CA3AF' },
 };
 
 /* ── Banner slide editor ─────────────────────────────────────── */
@@ -62,7 +69,7 @@ function SlideEditor({ slide, index, onChange }) {
                     <label>Accent Colour</label>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         <input type="color" value={slide.accent} onChange={e => onChange({ ...slide, accent: e.target.value })} style={{ width: 40, height: 36, padding: 2, border: '1px solid #ddd', borderRadius: 6, cursor: 'pointer' }} />
-                        <input value={slide.accent} onChange={e => onChange({ ...slide, accent: e.target.value })} style={{ flex: 1 }} placeholder="#1c2628" />
+                        <input value={slide.accent} onChange={e => onChange({ ...slide, accent: e.target.value })} style={{ flex: 1 }} placeholder="#FF6B00" />
                     </div>
                 </div>
             </div>
@@ -171,6 +178,18 @@ export default function AdminPage() {
         }
     };
 
+    const handleRefund = async (orderId) => {
+        const reason = window.prompt('Enter reason for refund:');
+        if (!reason) return;
+        try {
+            await paymentAPI.refund(orderId, reason);
+            setOrders((prev) => prev.map((o) => o._id === orderId ? { ...o, paymentStatus: 'refunded', status: 'cancelled' } : o));
+            addToast('Refund processed successfully', 'success');
+        } catch (err) {
+            addToast(err.response?.data?.message || 'Refund failed', 'error');
+        }
+    };
+
     const saveBanners = async () => {
         setSavingBanners(true);
         try {
@@ -252,7 +271,7 @@ export default function AdminPage() {
                             <p className="admin-page-sub">Welcome back! Here's what's happening today.</p>
                         </div>
                         <div className="admin-kpi-grid">
-                            <div className="admin-kpi-card admin-kpi-charcoal"><div className="admin-kpi-icon">📦</div><div className="admin-kpi-value">{products.length}</div><div className="admin-kpi-label">Total Products</div></div>
+                            <div className="admin-kpi-card admin-kpi-orange"><div className="admin-kpi-icon">📦</div><div className="admin-kpi-value">{products.length}</div><div className="admin-kpi-label">Total Products</div></div>
                             <div className="admin-kpi-card admin-kpi-green"><div className="admin-kpi-icon">✅</div><div className="admin-kpi-value">{inStock}</div><div className="admin-kpi-label">In Stock</div></div>
                             <div className="admin-kpi-card admin-kpi-red"><div className="admin-kpi-icon">⚠️</div><div className="admin-kpi-value">{outOfStock}</div><div className="admin-kpi-label">Out of Stock</div></div>
                             <div className="admin-kpi-card admin-kpi-purple"><div className="admin-kpi-icon">🛒</div><div className="admin-kpi-value">{orders.length}</div><div className="admin-kpi-label">Total Orders</div></div>
@@ -407,8 +426,17 @@ export default function AdminPage() {
                                     return (
                                         <div key={order._id} className="admin-order-card">
                                             <div className="admin-order-top">
-                                                <div className="admin-order-id"><span className="admin-order-hash">#</span>{order._id?.slice(-6).toUpperCase()}</div>
-                                                <span className="admin-order-status" style={{ background: st.bg, color: st.color }}><span className="admin-status-dot" style={{ background: st.dot }} />{order.status}</span>
+                                                <div className="admin-order-id">
+                                                    <span className="admin-order-hash">#</span>{order._id?.slice(-6).toUpperCase()}
+                                                    {order.isFlagged && <span className="admin-flag-icon" title="High value / Specific risk">🚩</span>}
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <span className="admin-order-status" style={{ background: st.bg, color: st.color }}><span className="admin-status-dot" style={{ background: st.dot }} />{order.status}</span>
+                                                    <span className="admin-order-status" style={{ background: (PAYMENT_STATUS_COLORS[order.paymentStatus] || PAYMENT_STATUS_COLORS.pending).bg, color: (PAYMENT_STATUS_COLORS[order.paymentStatus] || PAYMENT_STATUS_COLORS.pending).color }}>
+                                                        <span className="admin-status-dot" style={{ background: (PAYMENT_STATUS_COLORS[order.paymentStatus] || PAYMENT_STATUS_COLORS.pending).dot }} />
+                                                        {order.paymentStatus}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div className="admin-order-date">🕐 {new Date(order.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                                             <div className="admin-order-customer">
@@ -426,12 +454,19 @@ export default function AdminPage() {
                                                 <div className="admin-order-total-row"><span>Total</span><span className="admin-order-total">₹{order.totalAmount?.toLocaleString('en-IN')}</span></div>
                                             </div>
                                             <div className="admin-status-update">
+                                                <div style={{ marginBottom: 8 }}>
+                                                    <span className="admin-update-label">Transaction ID:</span>
+                                                    <code className="admin-tx-id">{order.razorpayPaymentId || 'N/A'}</code>
+                                                </div>
                                                 <span className="admin-update-label">Update Status:</span>
                                                 <div className="admin-status-btns">
                                                     {Object.entries(STATUS_COLORS).map(([key, val]) =>
                                                         order.status !== key && (
                                                             <button key={key} className="admin-status-btn" style={{ borderColor: val.color, color: val.color }} onClick={() => handleStatusChange(order._id, key)}>{key}</button>
                                                         )
+                                                    )}
+                                                    {order.paymentStatus === 'paid' && (
+                                                        <button className="admin-status-btn" style={{ borderColor: '#dc2626', color: '#dc2626' }} onClick={() => handleRefund(order._id)}>Issue Refund</button>
                                                     )}
                                                 </div>
                                             </div>

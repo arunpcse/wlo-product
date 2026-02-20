@@ -28,7 +28,7 @@ function imgFallback(e, category) {
 }
 
 const CAT_COLORS = {
-    'All': ['#1c2628', '#354147'],
+    'All': ['#FF6B00', '#FF8833'],
     'Screen Protection': ['#1a1a2e', '#16213e'],
     'Cables & Chargers': ['#0f3460', '#533483'],
     'Audio': ['#2d1b69', '#11998e'],
@@ -36,7 +36,7 @@ const CAT_COLORS = {
     'Car Accessories': ['#232526', '#414345'],
     'Powerbanks': ['#1f4037', '#99f2c8'],
     'Power Banks': ['#1f4037', '#99f2c8'],
-    'default': ['#1c2628', '#354147'],
+    'default': ['#FF6B00', '#FF8833'],
 };
 
 const SORT_OPTIONS = [
@@ -58,7 +58,7 @@ function Stars({ rating }) {
     return (
         <span>
             {Array.from({ length: 5 }, (_, i) => (
-                <span key={i} style={{ color: i < Math.round(rating) ? '#1c2628' : '#D1D5DB', fontSize: 14 }}>★</span>
+                <span key={i} style={{ color: i < Math.round(rating) ? '#FF6B00' : '#D1D5DB', fontSize: 14 }}>★</span>
             ))}
         </span>
     );

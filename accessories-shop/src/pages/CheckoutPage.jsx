@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
-import { orderAPI } from '../utils/api';
-import { sendWhatsAppOrder, formatCurrency } from '../utils/whatsapp';
+import { orderAPI, paymentAPI } from '../utils/api';
+import { formatCurrency } from '../utils/whatsapp';
 
 export default function CheckoutPage() {
     const { cartItems, cartTotal, clearCart } = useCart();
@@ -26,31 +26,87 @@ export default function CheckoutPage() {
         return e;
     };
 
+    const handlePayment = async () => {
+        try {
+            setLoading(true);
+
+            // 1. Initiate payment on backend
+            const orderPayload = {
+                items: cartItems.map((i) => ({ productId: i._id, name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
+                customer: form,
+            };
+
+            const resp = await paymentAPI.initiate(orderPayload);
+            const { orderId, amount, currency, dbOrderId } = resp.data;
+
+            // 2. Configure Razorpay options
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
+                amount,
+                currency,
+                name: 'World Line Out',
+                description: 'Mobile Accessories Order',
+                image: '/wlo-logo.png',
+                order_id: orderId,
+                handler: async (response) => {
+                    try {
+                        setLoading(true);
+                        // 3. Verify payment on backend
+                        const verifyData = {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            dbOrderId
+                        };
+
+                        const verifyResp = await paymentAPI.verify(verifyData);
+                        if (verifyResp.data.success) {
+                            addToast('Payment Successful!', 'success');
+                            // Clear cart and navigate
+                            clearCart();
+                            navigate('/order-confirm', {
+                                state: {
+                                    orderNumber: verifyResp.data.orderId,
+                                    customer: form,
+                                    total: cartTotal
+                                }
+                            });
+                        }
+                    } catch (err) {
+                        console.error('Verification Error:', err);
+                        addToast(err.response?.data?.message || 'Payment verification failed', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                },
+                prefill: {
+                    name: form.name,
+                    contact: form.phone,
+                },
+                theme: { color: '#FF6B00' },
+                modal: {
+                    ondismiss: () => {
+                        setLoading(false);
+                        addToast('Payment cancelled', 'info');
+                    }
+                }
+            };
+
+            const rzp = new window.Razorpay(options);
+            rzp.open();
+
+        } catch (err) {
+            console.error('Payment Error:', err);
+            addToast(err.response?.data?.message || 'Failed to initiate payment', 'error');
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         const errs = validate();
         if (Object.keys(errs).length) { setErrors(errs); return; }
-
-        // ✅ Open WhatsApp FIRST — must be synchronous (direct user click)
-        // Browser blocks window.open() if called after any await
-        sendWhatsAppOrder(cartItems, cartTotal, form);
-
-        // Generate local order number
-        const orderNumber = `WLO-${Date.now()}`;
-
-        // Clear cart and navigate to confirm page
-        clearCart();
-        navigate('/order-confirm', { state: { orderNumber, customer: form, total: cartTotal } });
-
-        // Save order to backend in the background (optional, won't block WhatsApp)
-        const orderPayload = {
-            items: cartItems.map((i) => ({ productId: i._id, name: i.name, price: i.price, quantity: i.quantity, image: i.image })),
-            totalAmount: cartTotal,
-            customer: form,
-        };
-        orderAPI.create(orderPayload).catch(() => {
-            // Backend unavailable — order still sent via WhatsApp ✅
-        });
+        handlePayment();
     };
 
     const handleChange = (e) => {
@@ -63,8 +119,8 @@ export default function CheckoutPage() {
             <div className="checkout-layout">
                 {/* Form */}
                 <div className="checkout-form-card">
-                    <h1 className="page-title">📋 Checkout</h1>
-                    <p className="page-subtitle">Your order will be sent to our WhatsApp</p>
+                    <h1 className="page-title">💳 Secure Checkout</h1>
+                    <p className="page-subtitle">Complete your payment to place the order</p>
 
                     <form onSubmit={handleSubmit} className="checkout-form">
                         <div className="form-group">
@@ -83,13 +139,13 @@ export default function CheckoutPage() {
                             {errors.address && <span className="error-msg">{errors.address}</span>}
                         </div>
 
-                        <div className="whatsapp-note">
-                            <span>📲</span>
-                            <p>Clicking "Place Order" will open <strong>WhatsApp</strong> with your order details.</p>
+                        <div className="payment-note">
+                            <span>🛡️</span>
+                            <p>Your payment is secure and encrypted via <strong>Razorpay</strong>.</p>
                         </div>
 
-                        <button type="submit" className="btn btn-whatsapp btn-full" disabled={loading}>
-                            {loading ? '⏳ Processing...' : '📲 Place Order on WhatsApp'}
+                        <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+                            {loading ? '⏳ Processing...' : '💳 Pay Now'}
                         </button>
                     </form>
                 </div>

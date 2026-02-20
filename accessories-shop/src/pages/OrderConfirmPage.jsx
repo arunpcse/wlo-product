@@ -19,8 +19,8 @@ export default function OrderConfirmPage() {
         <main className="page-center">
             <div className="confirm-card">
                 <div className="confirm-icon success-bounce">✅</div>
-                <h1 className="confirm-title">Order Placed!</h1>
-                <p className="confirm-subtitle">Your order has been sent to WhatsApp successfully.</p>
+                <h1 className="confirm-title">Payment Successful!</h1>
+                <p className="confirm-subtitle">Your order has been placed and payment verified.</p>
 
                 <div className="confirm-details">
                     <div className="confirm-row">
@@ -42,8 +42,8 @@ export default function OrderConfirmPage() {
                 </div>
 
                 <div className="confirm-note">
-                    <span>📲</span>
-                    <p>We'll confirm your order on WhatsApp. Keep your phone handy!</p>
+                    <span>📧</span>
+                    <p>A confirmation email and receipt will be sent to you shortly.</p>
                 </div>
 
                 <Link to="/" className="btn btn-primary btn-full">🏪 Continue Shopping</Link>

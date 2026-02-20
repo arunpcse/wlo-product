@@ -58,5 +58,12 @@ export const settingsAPI = {
     update: (data) => api.put('/api/settings', data),
 };
 
+// Payments
+export const paymentAPI = {
+    initiate: (data) => api.post('/api/payments/initiate', data),
+    verify: (data) => api.post('/api/payments/verify', data),
+    refund: (id, reason) => api.post(`/api/payments/refund/${id}`, { reason }),
+};
+
 export default api;
 
