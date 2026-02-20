@@ -26,6 +26,18 @@ function imgFallback(e, category) {
     e.target.onerror = null;
 }
 
+const CAT_COLORS = {
+    'All': ['#FF6B00', '#FF8C42'],
+    'Screen Protection': ['#1a1a2e', '#16213e'],
+    'Cables & Chargers': ['#0f3460', '#533483'],
+    'Audio': ['#2d1b69', '#11998e'],
+    'Phone Cases': ['#134e5e', '#71b280'],
+    'Car Accessories': ['#232526', '#414345'],
+    'Powerbanks': ['#1f4037', '#99f2c8'],
+    'Power Banks': ['#1f4037', '#99f2c8'],
+    'default': ['#FF6B00', '#FF8C42'],
+};
+
 const SORT_OPTIONS = [
     { value: 'newest', label: '🆕 Newest' },
     { value: 'price_asc', label: '💰 Price: Low to High' },
