@@ -4,6 +4,7 @@ import { CartProvider } from './context/CartContext';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { SettingsProvider } from './context/SettingsContext';
 import Header from './components/Header';
 import CartDrawer from './components/CartDrawer';
 import ToastContainer from './components/ToastContainer';
@@ -24,30 +25,32 @@ export default function App() {
       <ToastProvider>
         <AuthProvider>
           <WishlistProvider>
-            <ProductProvider>
-              <CartProvider>
-                <div className="app">
-                  <Header />
-                  <CartDrawer />
-                  <ToastContainer />
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/shop" element={<ShopPage />} />
-                    <Route path="/product/:id" element={<ProductDetailPage />} />
-                    <Route path="/wishlist" element={<WishlistPage />} />
-                    <Route path="/checkout" element={<CheckoutPage />} />
-                    <Route path="/order-confirm" element={<OrderConfirmPage />} />
-                    <Route path="/admin/login" element={<AdminLoginPage />} />
-                    <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-                    <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
-                  </Routes>
-                  <footer className="footer">
-                    <p>© 2025 <strong>World Line On</strong> — Premium Mobile Accessories</p>
-                    <p className="footer-sub">📱 Quality You Can Trust | WhatsApp: +91 93610 46703</p>
-                  </footer>
-                </div>
-              </CartProvider>
-            </ProductProvider>
+            <SettingsProvider>
+              <ProductProvider>
+                <CartProvider>
+                  <div className="app">
+                    <Header />
+                    <CartDrawer />
+                    <ToastContainer />
+                    <Routes>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/shop" element={<ShopPage />} />
+                      <Route path="/product/:id" element={<ProductDetailPage />} />
+                      <Route path="/wishlist" element={<WishlistPage />} />
+                      <Route path="/checkout" element={<CheckoutPage />} />
+                      <Route path="/order-confirm" element={<OrderConfirmPage />} />
+                      <Route path="/admin/login" element={<AdminLoginPage />} />
+                      <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                      <Route path="/admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+                    </Routes>
+                    <footer className="footer">
+                      <p>© 2025 <strong>World Line On</strong> — Premium Mobile Accessories</p>
+                      <p className="footer-sub">📱 Quality You Can Trust | WhatsApp: +91 93610 46703</p>
+                    </footer>
+                  </div>
+                </CartProvider>
+              </ProductProvider>
+            </SettingsProvider>
           </WishlistProvider>
         </AuthProvider>
       </ToastProvider>

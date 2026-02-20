@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ImageUploader from './ImageUploader';
 
 const CATEGORIES = ['Screen Protection', 'Cables & Chargers', 'Audio', 'Phone Cases', 'Car Accessories', 'Power Banks', 'Holders & Stands', 'Other'];
 
@@ -131,15 +132,11 @@ export default function ProductForm({ product, onSave, onClose }) {
                         {errors.description && <span className="error-msg">{errors.description}</span>}
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="pf-image">Image URL <span style={{ color: '#888', fontWeight: 400 }}>(optional)</span></label>
-                        <input id="pf-image" name="image" type="url" value={form.image} onChange={handleChange} placeholder="https://example.com/image.jpg" />
-                        {form.image && (
-                            <div className="image-preview">
-                                <img src={form.image} alt="Preview" onError={(e) => (e.target.style.display = 'none')} />
-                            </div>
-                        )}
-                    </div>
+                    <ImageUploader
+                        label="Product Image"
+                        value={form.image}
+                        onChange={(url) => setForm((p) => ({ ...p, image: url }))}
+                    />
 
                     {/* Product flags */}
                     <div className="form-group">

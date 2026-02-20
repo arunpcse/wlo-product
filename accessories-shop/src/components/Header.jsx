@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
+import wloLogo from '../assets/wlo-logo.png';
 
 export default function Header() {
     const { cartCount, openCart } = useCart();
@@ -35,11 +36,11 @@ export default function Header() {
                 <div className="hdr-container">
                     {/* Logo */}
                     <Link to="/" className="hdr-logo">
-                        <div className="hdr-logo-icon">📱</div>
-                        <div className="hdr-logo-text">
-                            <span className="hdr-logo-brand">World Line On</span>
-                            <span className="hdr-logo-sub">Mobile Accessories</span>
-                        </div>
+                        <img
+                            src={wloLogo}
+                            alt="WLO Accessories"
+                            className="hdr-logo-img"
+                        />
                     </Link>
 
                     {/* Search bar */}

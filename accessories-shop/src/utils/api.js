@@ -40,4 +40,23 @@ export const authAPI = {
     verify: () => api.get('/api/auth/verify'),
 };
 
+// Image upload
+export const uploadAPI = {
+    upload: (file) => {
+        const form = new FormData();
+        form.append('image', file);
+        return api.post('/api/upload', form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 30000,
+        });
+    },
+};
+
+// Site settings (banners, category images)
+export const settingsAPI = {
+    get: () => api.get('/api/settings'),
+    update: (data) => api.put('/api/settings', data),
+};
+
 export default api;
+

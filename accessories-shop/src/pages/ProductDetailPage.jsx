@@ -11,7 +11,7 @@ function Stars({ rating, size = 16 }) {
     return (
         <span style={{ fontSize: size }}>
             {Array.from({ length: 5 }, (_, i) => (
-                <span key={i} style={{ color: i < Math.round(rating) ? '#FF6B00' : '#D1D5DB' }}>★</span>
+                <span key={i} style={{ color: i < Math.round(rating) ? '#1c2628' : '#D1D5DB' }}>★</span>
             ))}
         </span>
     );
@@ -255,7 +255,7 @@ export default function ProductDetailPage() {
                                 <span
                                     key={s}
                                     onClick={() => setReviewRating(s)}
-                                    style={{ fontSize: 28, cursor: 'pointer', color: s <= reviewRating ? '#FF6B00' : '#ccc' }}
+                                    style={{ fontSize: 28, cursor: 'pointer', color: s <= reviewRating ? '#1c2628' : '#ccc' }}
                                 >★</span>
                             ))}
                         </div>

@@ -5,6 +5,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import wloLogo from '../assets/wlo-logo.png';
 
 // Real product photos from Unsplash per category
 const CAT_IMAGES = {
@@ -27,7 +28,7 @@ function imgFallback(e, category) {
 }
 
 const CAT_COLORS = {
-    'All': ['#FF6B00', '#FF8C42'],
+    'All': ['#1c2628', '#354147'],
     'Screen Protection': ['#1a1a2e', '#16213e'],
     'Cables & Chargers': ['#0f3460', '#533483'],
     'Audio': ['#2d1b69', '#11998e'],
@@ -35,7 +36,7 @@ const CAT_COLORS = {
     'Car Accessories': ['#232526', '#414345'],
     'Powerbanks': ['#1f4037', '#99f2c8'],
     'Power Banks': ['#1f4037', '#99f2c8'],
-    'default': ['#FF6B00', '#FF8C42'],
+    'default': ['#1c2628', '#354147'],
 };
 
 const SORT_OPTIONS = [
@@ -57,7 +58,7 @@ function Stars({ rating }) {
     return (
         <span>
             {Array.from({ length: 5 }, (_, i) => (
-                <span key={i} style={{ color: i < Math.round(rating) ? '#FF6B00' : '#D1D5DB', fontSize: 14 }}>★</span>
+                <span key={i} style={{ color: i < Math.round(rating) ? '#1c2628' : '#D1D5DB', fontSize: 14 }}>★</span>
             ))}
         </span>
     );
@@ -154,13 +155,17 @@ export default function ShopPage() {
                         <p className="shop-hero-sub">
                             {filtered.length} product{filtered.length !== 1 ? 's' : ''} available
                         </p>
+                        <div className="shop-hero-links">
+                            <Link to="/" className="shop-hero-link">Home</Link>
+                            <span style={{ color: 'rgba(255,255,255,.5)' }}>›</span>
+                            <span style={{ color: '#fff', fontWeight: 700 }}>
+                                {activeCategory === 'All' ? 'Shop' : activeCategory}
+                            </span>
+                        </div>
                     </div>
-                    <div className="shop-hero-links">
-                        <Link to="/" className="shop-hero-link">Home</Link>
-                        <span style={{ color: 'rgba(255,255,255,.5)' }}>›</span>
-                        <span style={{ color: '#fff', fontWeight: 700 }}>
-                            {activeCategory === 'All' ? 'Shop' : activeCategory}
-                        </span>
+                    {/* Shop page logo */}
+                    <div className="shop-hero-logo-wrap">
+                        <img src={wloLogo} alt="WLO Accessories" className="shop-hero-logo" />
                     </div>
                 </div>
             </div>

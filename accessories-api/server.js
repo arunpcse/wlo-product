@@ -47,6 +47,8 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/products', require('./src/routes/products'));
 app.use('/api/orders', require('./src/routes/orders'));
+app.use('/api/upload', require('./src/routes/upload'));
+app.use('/api/settings', require('./src/routes/settings'));
 
 // ─── Error handler ───────────────────────────────────────────────────────────
 app.use(errorHandler);

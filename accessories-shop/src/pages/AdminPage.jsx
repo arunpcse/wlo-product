@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useProducts } from '../context/ProductContext';
+import { useSettings } from '../context/SettingsContext';
 import { useToast } from '../context/ToastContext';
 import { orderAPI } from '../utils/api';
 import ProductForm from '../components/ProductForm';
 import DeleteConfirm from '../components/DeleteConfirm';
+import ImageUploader from '../components/ImageUploader';
 
 const CAT_IMAGES = {
     'Screen Protection': 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?auto=format&w=420&q=80',
@@ -28,9 +30,74 @@ const STATUS_COLORS = {
     cancelled: { bg: '#fff1f2', color: '#dc2626', dot: '#ef4444' },
 };
 
+/* ── Banner slide editor ─────────────────────────────────────── */
+function SlideEditor({ slide, index, onChange }) {
+    return (
+        <div className="slide-editor-card">
+            <div className="slide-editor-num">Banner {index + 1}</div>
+            <div className="form-row">
+                <div className="form-group">
+                    <label>Badge Text</label>
+                    <input value={slide.badge} onChange={e => onChange({ ...slide, badge: e.target.value })} placeholder="e.g. MEGA DEALS" />
+                </div>
+                <div className="form-group">
+                    <label>Button Text (CTA)</label>
+                    <input value={slide.cta} onChange={e => onChange({ ...slide, cta: e.target.value })} placeholder="e.g. Shop Now" />
+                </div>
+            </div>
+            <div className="form-group">
+                <label>Title (use \n for line break)</label>
+                <input value={slide.title} onChange={e => onChange({ ...slide, title: e.target.value })} placeholder="e.g. Best Deals on\nPremium Accessories" />
+            </div>
+            <div className="form-group">
+                <label>Subtitle</label>
+                <input value={slide.subtitle} onChange={e => onChange({ ...slide, subtitle: e.target.value })} />
+            </div>
+            <div className="form-row">
+                <div className="form-group">
+                    <label>Link</label>
+                    <input value={slide.link} onChange={e => onChange({ ...slide, link: e.target.value })} placeholder="/shop" />
+                </div>
+                <div className="form-group">
+                    <label>Accent Colour</label>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input type="color" value={slide.accent} onChange={e => onChange({ ...slide, accent: e.target.value })} style={{ width: 40, height: 36, padding: 2, border: '1px solid #ddd', borderRadius: 6, cursor: 'pointer' }} />
+                        <input value={slide.accent} onChange={e => onChange({ ...slide, accent: e.target.value })} style={{ flex: 1 }} placeholder="#1c2628" />
+                    </div>
+                </div>
+            </div>
+            <ImageUploader
+                label="Banner Image"
+                value={slide.img}
+                onChange={url => onChange({ ...slide, img: url })}
+            />
+        </div>
+    );
+}
+
+/* ── Category image editor ───────────────────────────────────── */
+function CategoryImageEditor({ cat, onChange }) {
+    return (
+        <div className="cat-editor-card">
+            <div className="cat-editor-name">{cat.name}</div>
+            <div className="form-group">
+                <label>Subtitle label</label>
+                <input value={cat.sub} onChange={e => onChange({ ...cat, sub: e.target.value })} placeholder="e.g. Tempered Glass" />
+            </div>
+            <ImageUploader
+                label={`${cat.name} Image`}
+                value={cat.img}
+                onChange={url => onChange({ ...cat, img: url })}
+            />
+        </div>
+    );
+}
+
 export default function AdminPage() {
     const { products, addProduct, updateProduct, deleteProduct, useLocalFallback } = useProducts();
+    const { slides, categoryImages, updateSlides, updateCategoryImages } = useSettings();
     const { addToast } = useToast();
+
     const [activeTab, setActiveTab] = useState('Products');
     const [showForm, setShowForm] = useState(false);
     const [editProduct, setEditProduct] = useState(null);
@@ -39,6 +106,15 @@ export default function AdminPage() {
     const [ordersLoaded, setOrdersLoaded] = useState(false);
     const [orderFilter, setOrderFilter] = useState('all');
     const [productSearch, setProductSearch] = useState('');
+
+    // Local editable copies for banner & category tabs
+    const [localSlides, setLocalSlides] = useState(null);    // null = use context
+    const [localCats, setLocalCats] = useState(null);
+    const [savingBanners, setSavingBanners] = useState(false);
+    const [savingCats, setSavingCats] = useState(false);
+
+    const editableSlides = localSlides ?? slides;
+    const editableCats = localCats ?? categoryImages;
 
     const loadOrders = async () => {
         if (ordersLoaded) return;
@@ -55,6 +131,8 @@ export default function AdminPage() {
     const handleTabChange = (tab) => {
         setActiveTab(tab);
         if (tab === 'Orders') loadOrders();
+        if (tab === 'Banners') setLocalSlides(null);
+        if (tab === 'Categories') setLocalCats(null);
     };
 
     const handleSave = async (formData) => {
@@ -93,6 +171,28 @@ export default function AdminPage() {
         }
     };
 
+    const saveBanners = async () => {
+        setSavingBanners(true);
+        try {
+            await updateSlides(editableSlides);
+            setLocalSlides(null);
+            addToast('Banners saved! Changes are live on the homepage.', 'success');
+        } catch {
+            addToast('Failed to save banners', 'error');
+        } finally { setSavingBanners(false); }
+    };
+
+    const saveCategoryImages = async () => {
+        setSavingCats(true);
+        try {
+            await updateCategoryImages(editableCats);
+            setLocalCats(null);
+            addToast('Category images saved!', 'success');
+        } catch {
+            addToast('Failed to save category images', 'error');
+        } finally { setSavingCats(false); }
+    };
+
     const totalRevenue = orders.filter(o => o.status !== 'cancelled').reduce((s, o) => s + (o.totalAmount || 0), 0);
     const pendingOrders = orders.filter(o => o.status === 'pending').length;
     const inStock = products.filter(p => p.stock > 0).length;
@@ -119,6 +219,8 @@ export default function AdminPage() {
                     {[
                         { id: 'Dashboard', icon: '📊', label: 'Dashboard' },
                         { id: 'Products', icon: '📦', label: 'Products' },
+                        { id: 'Banners', icon: '🖼️', label: 'Hero Banners' },
+                        { id: 'Categories', icon: '🗂️', label: 'Category Images' },
                         { id: 'Orders', icon: '🛒', label: 'Orders' },
                     ].map(({ id, icon, label }) => (
                         <button
@@ -141,6 +243,7 @@ export default function AdminPage() {
 
             {/* ── Main content ── */}
             <div className="admin-main">
+
                 {/* ── Dashboard tab ── */}
                 {activeTab === 'Dashboard' && (
                     <div className="admin-section">
@@ -149,49 +252,20 @@ export default function AdminPage() {
                             <p className="admin-page-sub">Welcome back! Here's what's happening today.</p>
                         </div>
                         <div className="admin-kpi-grid">
-                            <div className="admin-kpi-card admin-kpi-orange">
-                                <div className="admin-kpi-icon">📦</div>
-                                <div className="admin-kpi-value">{products.length}</div>
-                                <div className="admin-kpi-label">Total Products</div>
-                            </div>
-                            <div className="admin-kpi-card admin-kpi-green">
-                                <div className="admin-kpi-icon">✅</div>
-                                <div className="admin-kpi-value">{inStock}</div>
-                                <div className="admin-kpi-label">In Stock</div>
-                            </div>
-                            <div className="admin-kpi-card admin-kpi-red">
-                                <div className="admin-kpi-icon">⚠️</div>
-                                <div className="admin-kpi-value">{outOfStock}</div>
-                                <div className="admin-kpi-label">Out of Stock</div>
-                            </div>
-                            <div className="admin-kpi-card admin-kpi-purple">
-                                <div className="admin-kpi-icon">🛒</div>
-                                <div className="admin-kpi-value">{orders.length}</div>
-                                <div className="admin-kpi-label">Total Orders</div>
-                            </div>
-                            <div className="admin-kpi-card admin-kpi-blue">
-                                <div className="admin-kpi-icon">💰</div>
-                                <div className="admin-kpi-value">₹{totalRevenue.toLocaleString('en-IN')}</div>
-                                <div className="admin-kpi-label">Revenue</div>
-                            </div>
-                            <div className="admin-kpi-card admin-kpi-amber">
-                                <div className="admin-kpi-icon">⏳</div>
-                                <div className="admin-kpi-value">{pendingOrders}</div>
-                                <div className="admin-kpi-label">Pending Orders</div>
-                            </div>
+                            <div className="admin-kpi-card admin-kpi-charcoal"><div className="admin-kpi-icon">📦</div><div className="admin-kpi-value">{products.length}</div><div className="admin-kpi-label">Total Products</div></div>
+                            <div className="admin-kpi-card admin-kpi-green"><div className="admin-kpi-icon">✅</div><div className="admin-kpi-value">{inStock}</div><div className="admin-kpi-label">In Stock</div></div>
+                            <div className="admin-kpi-card admin-kpi-red"><div className="admin-kpi-icon">⚠️</div><div className="admin-kpi-value">{outOfStock}</div><div className="admin-kpi-label">Out of Stock</div></div>
+                            <div className="admin-kpi-card admin-kpi-purple"><div className="admin-kpi-icon">🛒</div><div className="admin-kpi-value">{orders.length}</div><div className="admin-kpi-label">Total Orders</div></div>
+                            <div className="admin-kpi-card admin-kpi-blue"><div className="admin-kpi-icon">💰</div><div className="admin-kpi-value">₹{totalRevenue.toLocaleString('en-IN')}</div><div className="admin-kpi-label">Revenue</div></div>
+                            <div className="admin-kpi-card admin-kpi-amber"><div className="admin-kpi-icon">⏳</div><div className="admin-kpi-value">{pendingOrders}</div><div className="admin-kpi-label">Pending Orders</div></div>
                         </div>
                         <div className="admin-quick-actions">
                             <h3 className="admin-sub-title">Quick Actions</h3>
                             <div className="admin-quick-row">
-                                <button className="admin-quick-btn" onClick={() => { setEditProduct(null); setShowForm(true); }}>
-                                    <span>➕</span> Add New Product
-                                </button>
-                                <button className="admin-quick-btn" onClick={() => handleTabChange('Orders')}>
-                                    <span>📋</span> View All Orders
-                                </button>
-                                <button className="admin-quick-btn" onClick={() => handleTabChange('Products')}>
-                                    <span>📦</span> Manage Products
-                                </button>
+                                <button className="admin-quick-btn" onClick={() => { setEditProduct(null); setShowForm(true); }}><span>➕</span> Add New Product</button>
+                                <button className="admin-quick-btn" onClick={() => handleTabChange('Banners')}><span>🖼️</span> Edit Banners</button>
+                                <button className="admin-quick-btn" onClick={() => handleTabChange('Categories')}><span>🗂️</span> Edit Category Images</button>
+                                <button className="admin-quick-btn" onClick={() => handleTabChange('Orders')}><span>📋</span> View All Orders</button>
                             </div>
                         </div>
                     </div>
@@ -209,88 +283,31 @@ export default function AdminPage() {
                                 ➕ Add Product
                             </button>
                         </div>
-
-                        {/* Search */}
                         <div className="admin-search-wrap">
                             <span className="admin-search-icon">🔍</span>
-                            <input
-                                type="search"
-                                className="admin-search-input"
-                                placeholder="Search products by name or category…"
-                                value={productSearch}
-                                onChange={e => setProductSearch(e.target.value)}
-                            />
+                            <input type="search" className="admin-search-input" placeholder="Search products by name or category…" value={productSearch} onChange={e => setProductSearch(e.target.value)} />
                         </div>
-
                         {filteredProducts.length === 0 ? (
-                            <div className="admin-empty">
-                                <div className="admin-empty-icon">📦</div>
-                                <h3>No products found</h3>
-                                <button className="admin-primary-btn" onClick={() => setShowForm(true)}>Add First Product</button>
-                            </div>
+                            <div className="admin-empty"><div className="admin-empty-icon">📦</div><h3>No products found</h3><button className="admin-primary-btn" onClick={() => setShowForm(true)}>Add First Product</button></div>
                         ) : (
                             <div className="admin-table-wrap">
                                 <table className="admin-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Product</th>
-                                            <th>Category</th>
-                                            <th>Price</th>
-                                            <th>Stock</th>
-                                            <th>Rating</th>
-                                            <th>Badges</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
+                                    <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Rating</th><th>Badges</th><th>Actions</th></tr></thead>
                                     <tbody>
                                         {filteredProducts.map((p) => (
                                             <tr key={p._id}>
                                                 <td>
                                                     <div className="admin-product-cell">
-                                                        <img
-                                                            src={p.image && p.image.trim() ? p.image : (CAT_IMAGES[p.category] || CAT_IMAGES.default)}
-                                                            alt={p.name}
-                                                            className="admin-product-thumb"
-                                                            onError={(e) => imgFallback(e, p.category)}
-                                                        />
-                                                        <div>
-                                                            <div className="admin-product-name">{p.name}</div>
-                                                            <div className="admin-product-desc">{p.description?.slice(0, 45)}{p.description?.length > 45 ? '…' : ''}</div>
-                                                        </div>
+                                                        <img src={p.image && p.image.trim() ? p.image : (CAT_IMAGES[p.category] || CAT_IMAGES.default)} alt={p.name} className="admin-product-thumb" onError={(e) => imgFallback(e, p.category)} />
+                                                        <div><div className="admin-product-name">{p.name}</div><div className="admin-product-desc">{p.description?.slice(0, 45)}{p.description?.length > 45 ? '…' : ''}</div></div>
                                                     </div>
                                                 </td>
                                                 <td><span className="admin-cat-badge">{p.category}</span></td>
-                                                <td>
-                                                    <div className="admin-price-cell">
-                                                        <span className="admin-price">₹{p.price?.toLocaleString('en-IN')}</span>
-                                                        {p.originalPrice > 0 && (
-                                                            <span className="admin-original-price">₹{p.originalPrice?.toLocaleString('en-IN')}</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className={`admin-stock-badge ${p.stock === 0 ? 'out' : p.stock <= 5 ? 'low' : 'ok'}`}>
-                                                        {p.stock === 0 ? 'Out of Stock' : p.stock <= 5 ? `Low (${p.stock})` : p.stock}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className="admin-rating">
-                                                        ⭐ {p.rating || '4.0'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="admin-badge-row">
-                                                        {p.isFeatured && <span className="admin-mini-badge feat">Featured</span>}
-                                                        {p.isNewArrival && <span className="admin-mini-badge new">New</span>}
-                                                        {p.isBestSeller && <span className="admin-mini-badge best">Best</span>}
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div className="admin-action-row">
-                                                        <button className="admin-edit-btn" onClick={() => { setEditProduct(p); setShowForm(true); }} title="Edit">✏️ Edit</button>
-                                                        <button className="admin-delete-btn" onClick={() => setDeleteTarget(p)} title="Delete">🗑️</button>
-                                                    </div>
-                                                </td>
+                                                <td><div className="admin-price-cell"><span className="admin-price">₹{p.price?.toLocaleString('en-IN')}</span>{p.originalPrice > 0 && <span className="admin-original-price">₹{p.originalPrice?.toLocaleString('en-IN')}</span>}</div></td>
+                                                <td><span className={`admin-stock-badge ${p.stock === 0 ? 'out' : p.stock <= 5 ? 'low' : 'ok'}`}>{p.stock === 0 ? 'Out of Stock' : p.stock <= 5 ? `Low (${p.stock})` : p.stock}</span></td>
+                                                <td><span className="admin-rating">⭐ {p.rating || '4.0'}</span></td>
+                                                <td><div className="admin-badge-row">{p.isFeatured && <span className="admin-mini-badge feat">Featured</span>}{p.isNewArrival && <span className="admin-mini-badge new">New</span>}{p.isBestSeller && <span className="admin-mini-badge best">Best</span>}</div></td>
+                                                <td><div className="admin-action-row"><button className="admin-edit-btn" onClick={() => { setEditProduct(p); setShowForm(true); }}>✏️ Edit</button><button className="admin-delete-btn" onClick={() => setDeleteTarget(p)}>🗑️</button></div></td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -300,35 +317,89 @@ export default function AdminPage() {
                     </div>
                 )}
 
+                {/* ── Banners tab ── */}
+                {activeTab === 'Banners' && (
+                    <div className="admin-section">
+                        <div className="admin-section-header">
+                            <div>
+                                <h1 className="admin-page-title">🖼️ Hero Banners</h1>
+                                <p className="admin-page-sub">Edit the homepage carousel slides — images, text and links.</p>
+                            </div>
+                            <button className="admin-primary-btn" disabled={savingBanners} onClick={saveBanners}>
+                                {savingBanners ? '⏳ Saving…' : '💾 Save Banners'}
+                            </button>
+                        </div>
+                        <div className="slides-editor-list">
+                            {editableSlides.map((slide, idx) => (
+                                <SlideEditor
+                                    key={idx}
+                                    slide={slide}
+                                    index={idx}
+                                    onChange={(updated) => {
+                                        const next = [...editableSlides];
+                                        next[idx] = updated;
+                                        setLocalSlides(next);
+                                    }}
+                                />
+                            ))}
+                        </div>
+                        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                            <button className="admin-primary-btn" disabled={savingBanners} onClick={saveBanners}>
+                                {savingBanners ? '⏳ Saving…' : '💾 Save All Banners'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* ── Category Images tab ── */}
+                {activeTab === 'Categories' && (
+                    <div className="admin-section">
+                        <div className="admin-section-header">
+                            <div>
+                                <h1 className="admin-page-title">🗂️ Category Images</h1>
+                                <p className="admin-page-sub">Upload images for each category shown on the homepage.</p>
+                            </div>
+                            <button className="admin-primary-btn" disabled={savingCats} onClick={saveCategoryImages}>
+                                {savingCats ? '⏳ Saving…' : '💾 Save Images'}
+                            </button>
+                        </div>
+                        <div className="cat-editor-grid">
+                            {editableCats.map((cat, idx) => (
+                                <CategoryImageEditor
+                                    key={cat.name}
+                                    cat={cat}
+                                    onChange={(updated) => {
+                                        const next = [...editableCats];
+                                        next[idx] = updated;
+                                        setLocalCats(next);
+                                    }}
+                                />
+                            ))}
+                        </div>
+                        <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                            <button className="admin-primary-btn" disabled={savingCats} onClick={saveCategoryImages}>
+                                {savingCats ? '⏳ Saving…' : '💾 Save Category Images'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Orders tab ── */}
                 {activeTab === 'Orders' && (
                     <div className="admin-section">
                         <div className="admin-section-header">
-                            <div>
-                                <h1 className="admin-page-title">Orders</h1>
-                                <p className="admin-page-sub">{orders.length} total orders</p>
-                            </div>
+                            <div><h1 className="admin-page-title">Orders</h1><p className="admin-page-sub">{orders.length} total orders</p></div>
                         </div>
-
-                        {/* Status filter pills */}
                         <div className="admin-filter-row">
                             {['all', 'pending', 'confirmed', 'shipped', 'delivered', 'cancelled'].map((s) => (
-                                <button
-                                    key={s}
-                                    className={`admin-filter-pill ${orderFilter === s ? 'active' : ''}`}
-                                    onClick={() => setOrderFilter(s)}
-                                >
+                                <button key={s} className={`admin-filter-pill ${orderFilter === s ? 'active' : ''}`} onClick={() => setOrderFilter(s)}>
                                     {s === 'all' ? 'All Orders' : s.charAt(0).toUpperCase() + s.slice(1)}
                                     {s === 'pending' && pendingOrders > 0 && <span className="admin-pill-count">{pendingOrders}</span>}
                                 </button>
                             ))}
                         </div>
-
                         {filteredOrders.length === 0 ? (
-                            <div className="admin-empty">
-                                <div className="admin-empty-icon">📭</div>
-                                <h3>No orders found</h3>
-                            </div>
+                            <div className="admin-empty"><div className="admin-empty-icon">📭</div><h3>No orders found</h3></div>
                         ) : (
                             <div className="admin-orders-grid">
                                 {filteredOrders.map((order) => {
@@ -336,26 +407,15 @@ export default function AdminPage() {
                                     return (
                                         <div key={order._id} className="admin-order-card">
                                             <div className="admin-order-top">
-                                                <div className="admin-order-id">
-                                                    <span className="admin-order-hash">#</span>
-                                                    {order._id?.slice(-6).toUpperCase()}
-                                                </div>
-                                                <span className="admin-order-status" style={{ background: st.bg, color: st.color }}>
-                                                    <span className="admin-status-dot" style={{ background: st.dot }} />
-                                                    {order.status}
-                                                </span>
+                                                <div className="admin-order-id"><span className="admin-order-hash">#</span>{order._id?.slice(-6).toUpperCase()}</div>
+                                                <span className="admin-order-status" style={{ background: st.bg, color: st.color }}><span className="admin-status-dot" style={{ background: st.dot }} />{order.status}</span>
                                             </div>
-
-                                            <div className="admin-order-date">
-                                                🕐 {new Date(order.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                            </div>
-
+                                            <div className="admin-order-date">🕐 {new Date(order.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                                             <div className="admin-order-customer">
                                                 <div className="admin-customer-name">👤 {order.customer?.name}</div>
                                                 <div className="admin-customer-detail">📞 {order.customer?.phone}</div>
                                                 <div className="admin-customer-detail">📍 {order.customer?.address}</div>
                                             </div>
-
                                             <div className="admin-order-items">
                                                 {order.items?.map((item, i) => (
                                                     <div key={i} className="admin-order-item-row">
@@ -363,25 +423,14 @@ export default function AdminPage() {
                                                         <span className="admin-item-price">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
                                                     </div>
                                                 ))}
-                                                <div className="admin-order-total-row">
-                                                    <span>Total</span>
-                                                    <span className="admin-order-total">₹{order.totalAmount?.toLocaleString('en-IN')}</span>
-                                                </div>
+                                                <div className="admin-order-total-row"><span>Total</span><span className="admin-order-total">₹{order.totalAmount?.toLocaleString('en-IN')}</span></div>
                                             </div>
-
                                             <div className="admin-status-update">
                                                 <span className="admin-update-label">Update Status:</span>
                                                 <div className="admin-status-btns">
                                                     {Object.entries(STATUS_COLORS).map(([key, val]) =>
                                                         order.status !== key && (
-                                                            <button
-                                                                key={key}
-                                                                className="admin-status-btn"
-                                                                style={{ borderColor: val.color, color: val.color }}
-                                                                onClick={() => handleStatusChange(order._id, key)}
-                                                            >
-                                                                {key}
-                                                            </button>
+                                                            <button key={key} className="admin-status-btn" style={{ borderColor: val.color, color: val.color }} onClick={() => handleStatusChange(order._id, key)}>{key}</button>
                                                         )
                                                     )}
                                                 </div>
