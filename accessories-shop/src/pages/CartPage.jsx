@@ -33,7 +33,7 @@ export default function CartPage() {
                     {/* Cart Items */}
                     <div className="cart-items">
                         {cartItems.map((item) => (
-                            <div key={item.id} className="cart-item">
+                            <div key={item._id || item.id} className="cart-item">
                                 <img
                                     src={item.image || 'https://via.placeholder.com/80'}
                                     alt={item.name}
@@ -92,9 +92,9 @@ export default function CartPage() {
                             <span>Total</span>
                             <span>₹{cartTotal.toLocaleString('en-IN')}</span>
                         </div>
-                        <button className="btn btn-primary btn-full checkout-btn">
+                        <Link to="/checkout" className="btn btn-primary btn-full checkout-btn">
                             🛍️ Proceed to Checkout
-                        </button>
+                        </Link>
                         <Link to="/" className="continue-shopping">
                             ← Continue Shopping
                         </Link>

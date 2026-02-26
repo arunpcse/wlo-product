@@ -5,67 +5,98 @@ import { useSettings } from '../context/SettingsContext';
 import ProductCard from '../components/ProductCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+// Fallback full-screen background slides (Native Union style)
+const BG_SLIDES = [
+    {
+        bg: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=1600&q=90&fit=crop',
+        badge: 'PREMIUM AUDIO',
+        title: 'Sound Without\nBoundaries',
+        subtitle: 'Premium wireless earbuds & headphones for every lifestyle.',
+        cta: 'Shop Now',
+        link: '/shop?category=Earbuds',
+    },
+    {
+        bg: 'https://images.unsplash.com/photo-1601972599720-36938d4ecd31?w=1600&q=90&fit=crop',
+        badge: 'PHONE PROTECTION',
+        title: 'Protect What\nMatters Most',
+        subtitle: 'Stylish, tough phone cases & screen protectors for every model.',
+        cta: 'Shop Cases',
+        link: '/shop?category=Cases',
+    },
+    {
+        bg: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1600&q=90&fit=crop',
+        badge: 'FAST CHARGING',
+        title: 'Power Up\nIn Minutes',
+        subtitle: 'Ultra-fast chargers, power banks & cables. Always stay powered.',
+        cta: 'Shop Chargers',
+        link: '/shop?category=Chargers',
+    },
+];
+
 function HeroCarousel() {
-    const { slides } = useSettings();
     const [current, setCurrent] = useState(0);
-    const [animating, setAnimating] = useState(false);
-
-    // Reset current if slides length changes
-    useEffect(() => {
-        if (current >= slides.length) setCurrent(0);
-    }, [slides.length]);
+    const [fading, setFading] = useState(false);
 
     useEffect(() => {
-        if (slides.length <= 1) return;
         const t = setInterval(() => {
-            setAnimating(true);
-            setTimeout(() => { setCurrent((c) => (c + 1) % slides.length); setAnimating(false); }, 300);
-        }, 5000);
+            setFading(true);
+            setTimeout(() => { setCurrent((c) => (c + 1) % BG_SLIDES.length); setFading(false); }, 400);
+        }, 5500);
         return () => clearInterval(t);
-    }, [slides.length]);
+    }, []);
 
-    const goTo = (i) => { setAnimating(true); setTimeout(() => { setCurrent(i); setAnimating(false); }, 200); };
-    const s = slides[current] || slides[0];
-    if (!s) return null;
+    const goTo = (i) => {
+        setFading(true);
+        setTimeout(() => { setCurrent(i); setFading(false); }, 300);
+    };
+
+    const s = BG_SLIDES[current];
 
     return (
-        <section className="hero-v2" style={{ background: s.gradient }}>
-            <div className={`hero-v2-inner ${animating ? 'fade-out' : 'fade-in'}`}>
-                <div className="hero-v2-left">
-                    <span className="hero-badge" style={{ color: s.accent, borderColor: s.accent }}>
-                        ✦ {s.badge}
-                    </span>
-                    <h1 className="hero-v2-title" style={{ '--hero-accent': s.accent }}>
-                        {s.title.split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
-                    </h1>
-                    <p className="hero-v2-sub">{s.subtitle}</p>
-                    <div className="hero-v2-actions">
-                        <Link to={s.link} className="hero-v2-btn" style={{ background: s.accent, boxShadow: `0 8px 28px ${s.accent}55` }}>
-                            {s.cta} →
-                        </Link>
-                        <Link to="/shop" className="hero-v2-btn-ghost">Browse All</Link>
-                    </div>
-                </div>
-                <div className="hero-v2-right">
-                    <div className="hero-v2-img-wrap">
-                        <img
-                            src={s.img}
-                            alt={s.badge}
-                            className="hero-v2-product-img"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                        <div className="hero-v2-glow" style={{ background: s.accent }} />
-                    </div>
+        <section className="hero-fullbg">
+            {/* Background images (pre-loaded all, crossfade active) */}
+            {BG_SLIDES.map((slide, i) => (
+                <div
+                    key={i}
+                    className="hero-fullbg-bg"
+                    style={{
+                        backgroundImage: `url(${slide.bg})`,
+                        opacity: i === current ? 1 : 0,
+                        transition: 'opacity 0.7s ease',
+                    }}
+                />
+            ))}
+
+            {/* Overlay */}
+            <div className="hero-fullbg-overlay" />
+
+            {/* Content */}
+            <div className={`hero-fullbg-content ${fading ? 'fading' : ''}`}>
+                <span className="hero-fullbg-badge">{s.badge}</span>
+                <h1 className="hero-fullbg-title">
+                    {s.title.split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
+                </h1>
+                <p className="hero-fullbg-sub">{s.subtitle}</p>
+                <div className="hero-fullbg-actions">
+                    <Link to={s.link} className="hero-fullbg-btn">
+                        {s.cta} →
+                    </Link>
+                    <Link to="/shop" className="hero-fullbg-btn-ghost">Browse All</Link>
                 </div>
             </div>
-            <div className="hero-v2-dots">
-                {slides.map((_, i) => (
-                    <button key={i} className={`hero-v2-dot ${i === current ? 'active' : ''}`}
-                        style={i === current ? { background: s.accent } : {}}
-                        onClick={() => goTo(i)} />
+
+            {/* Dots */}
+            <div className="hero-fullbg-dots">
+                {BG_SLIDES.map((_, i) => (
+                    <button
+                        key={i}
+                        className={`hero-fullbg-dot ${i === current ? 'active' : ''}`}
+                        onClick={() => goTo(i)}
+                    />
                 ))}
             </div>
-            <div className="hero-v2-slide-counter">{current + 1} / {slides.length}</div>
+
+            <div className="hero-fullbg-counter">{current + 1} / {BG_SLIDES.length}</div>
         </section>
     );
 }

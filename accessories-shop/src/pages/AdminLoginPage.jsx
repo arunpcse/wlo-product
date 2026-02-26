@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -17,34 +17,44 @@ export default function AdminLoginPage() {
             addToast('Welcome back, Admin! 👋', 'success');
             navigate('/admin');
         } catch {
+            setPassword('');
             addToast('❌ Wrong password. Try again.', 'error');
         }
     };
 
     return (
-        <main className="page-center login-page">
-            <div className="login-card">
-                <div className="login-icon">🔐</div>
-                <h1 className="login-title">Admin Login</h1>
-                <p className="login-sub">Enter your admin password to manage products</p>
+        <main className="login-page-v2">
+            <div className="login-card-v2">
+                <div className="login-logo-v2">
+                    <img src="/wlo-logo.png" alt="WLO Logo" />
+                </div>
 
-                <form onSubmit={handleSubmit} className="login-form">
+                <h1 className="login-title-v2">Admin Access</h1>
+                <p className="login-sub-v2">Enter your secure password to manage the store</p>
+
+                <form onSubmit={handleSubmit} className="login-form-v2">
                     <div className="form-group">
-                        <label htmlFor="password">Password</label>
+                        <label htmlFor="password">Administrator Password</label>
                         <input
                             id="password"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter admin password"
+                            placeholder="••••••••"
+                            className="login-input-v2"
                             autoFocus
                             autoComplete="current-password"
                         />
                     </div>
-                    <button type="submit" className="btn btn-primary btn-full">
-                        🔓 Login
+
+                    <button type="submit" className="btn btn-primary btn-full btn-large">
+                        Unlock Dashboard
                     </button>
                 </form>
+
+                <Link to="/" className="login-back-shop">
+                    ← Back to Store
+                </Link>
             </div>
         </main>
     );

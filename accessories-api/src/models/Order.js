@@ -17,7 +17,13 @@ const orderSchema = new mongoose.Schema({
         phone: { type: String, required: true },
         address: { type: String, required: true },
     },
-    status: { type: String, enum: ['pending', 'confirmed', 'delivered', 'cancelled'], default: 'pending' },
+    status: { type: String, enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'], default: 'pending' },
+    paymentStatus: { type: String, enum: ['pending', 'paid', 'failed', 'refunded'], default: 'pending' },
+    razorpayOrderId: { type: String },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
+    ipAddress: { type: String },
+    isFlagged: { type: Boolean, default: false },
     whatsappSent: { type: Boolean, default: false },
 }, { timestamps: true });
 

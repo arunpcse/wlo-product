@@ -44,7 +44,7 @@ export default function CheckoutPage() {
                 key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder',
                 amount,
                 currency,
-                name: 'World Line Out',
+                name: 'World Line On',
                 description: 'Mobile Accessories Order',
                 image: '/wlo-logo.png',
                 order_id: orderId,
@@ -83,7 +83,7 @@ export default function CheckoutPage() {
                     name: form.name,
                     contact: form.phone,
                 },
-                theme: { color: '#FF6B00' },
+                theme: { color: '#FF4C00' },
                 modal: {
                     ondismiss: () => {
                         setLoading(false);

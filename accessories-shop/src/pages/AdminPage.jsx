@@ -23,11 +23,11 @@ function imgFallback(e, category) {
 }
 
 const STATUS_COLORS = {
-    pending: { bg: '#fff7ed', color: '#ea580c', dot: '#f97316' },
-    confirmed: { bg: '#f0fdf4', color: '#16a34a', dot: '#22c55e' },
-    shipped: { bg: '#eff6ff', color: '#2563eb', dot: '#3b82f6' },
-    delivered: { bg: '#f5f3ff', color: '#7c3aed', dot: '#8b5cf6' },
-    cancelled: { bg: '#fff1f2', color: '#dc2626', dot: '#ef4444' },
+    pending: { bg: '#FFF5F0', color: '#B33500', dot: '#FF4C00' },
+    confirmed: { bg: '#F0FDF4', color: '#16A34A', dot: '#22C55E' },
+    shipped: { bg: '#EFF6FF', color: '#1E40AF', dot: '#3B82F6' },
+    delivered: { bg: '#F5F3FF', color: '#5B21B6', dot: '#8B5CF6' },
+    cancelled: { bg: '#FEF2F2', color: '#991B1B', dot: '#EF4444' },
 };
 
 const PAYMENT_STATUS_COLORS = {

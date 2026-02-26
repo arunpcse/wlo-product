@@ -49,6 +49,7 @@ app.use('/api/products', require('./src/routes/products'));
 app.use('/api/orders', require('./src/routes/orders'));
 app.use('/api/upload', require('./src/routes/upload'));
 app.use('/api/settings', require('./src/routes/settings'));
+app.use('/api/payments', require('./src/routes/paymentRoutes'));
 
 // ─── Error handler ───────────────────────────────────────────────────────────
 app.use(errorHandler);
